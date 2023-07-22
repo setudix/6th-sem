@@ -1,4 +1,5 @@
 <x-guest-layout>
+    @include('layouts.navigation')
     <x-auth-card>
         <!-- Session Status -->
         <x-auth-session-status class="mb-4" />

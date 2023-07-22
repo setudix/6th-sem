@@ -3,6 +3,13 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
+use ProtoneMedia\Splade\Facades\Toast;
+use ProtoneMedia\Splade\FormBuilder\File;
+use ProtoneMedia\Splade\FormBuilder\Input;
+use ProtoneMedia\Splade\FormBuilder\Password;
+use ProtoneMedia\Splade\FormBuilder\Textarea;
+use ProtoneMedia\Splade\SpladeForm;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -28,7 +35,50 @@ Route::middleware('splade')->group(function () {
     Route::spladeUploads();
 
     Route::get('/', function () {
-        return view('welcome');
+        return redirect()->route('dashboard');
+    });
+
+    Route::get('/post', function () {
+
+        $form = SpladeForm::make()
+            ->id('test-form')
+            ->class('space-y-4')
+            ->fields([
+                Input::make('name')->label('User Name'),
+                Password::make('password')->label('Password'),
+                Textarea::make('textarea')->label('Post')->autosize(),
+                File::make('photo')
+                    ->multiple() // Enables selecting multiple files
+                    ->filepond()
+                    ->preview()
+                    ->accept('image/jpeg')
+                    ->accept(['image/png', 'image/jpeg']),
+                File::make('photo')
+                    ->label('second photo')
+                    ->multiple()
+                    ->filepond()
+                    // ->server() // Enables asynchronous uploads of files
+                    ->preview() // Show image preview
+
+                    ->minSize('1Kb')
+                    ->maxSize('10Mb')
+
+                    // ->width(120)
+                    // ->height(120)
+
+                    ->minWidth(150)
+                    // ->maxWidth(500)
+
+                    ->minHeight(150)
+                    // ->maxHeight(500)
+
+                    // ->minResolution(150)
+                    // ->maxResolution(99999)
+            ]);
+
+        return view('post.post', [
+            'form' => $form,
+        ]);
     });
 
     Route::middleware('auth')->group(function () {
@@ -41,5 +91,5 @@ Route::middleware('splade')->group(function () {
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
 
-    require __DIR__.'/auth.php';
+    require __DIR__ . '/auth.php';
 });
