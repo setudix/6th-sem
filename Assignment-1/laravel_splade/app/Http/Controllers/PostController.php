@@ -26,14 +26,14 @@ class PostController extends Controller
             ->class('space-y-4')
             ->fields([
                 Textarea::make('content')->label('Write Your Post')->rules('required')->autosize(),
-                Submit::make()->label('Post'),
-                File::make('image')
+                File::make('images')
                     ->filepond()
+                    ->multiple()
                     ->preview(),
+                Submit::make()->label('Post'),
             ])
             ->method('post')
-            ->action(route('dashboard.store'))
-            ->stay(actionOnSuccess: 'reset');
+            ->action(route('dashboard.store'));
 
         $posts = Post::orderBy('created_at', 'desc')->get();
 
@@ -56,13 +56,14 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $image = $request->file('image');
-        $imagePath = Storage::disk('minio')->put('photos/photo.jpg', $image);
+        // $image = $request->file('image');
+        // $imagePath = Storage::disk('minio')->put('photos/photo.jpg', $image);
 
-        dd($imagePath, $request, $image);
+        // dd($imagePath, $request, $image);
 
         $request->validate([
             'content' => 'required',
+            'images.*' => 'file|image|nullable',
         ]);
 
         $post = new Post();
@@ -79,6 +80,8 @@ class PostController extends Controller
             ->message('Your post has been successfully stored!')
             ->success()
             ->autoDismiss(5);
+
+        return redirect()->back();
     }
 
     /**
