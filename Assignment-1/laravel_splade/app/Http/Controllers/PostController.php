@@ -7,7 +7,9 @@ use App\Models\User;
 use App\Notifications\NewPostNotification;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Storage;
 use ProtoneMedia\Splade\Facades\Toast;
+use ProtoneMedia\Splade\FormBuilder\File;
 use ProtoneMedia\Splade\FormBuilder\Submit;
 use ProtoneMedia\Splade\FormBuilder\Textarea;
 use ProtoneMedia\Splade\SpladeForm;
@@ -25,13 +27,16 @@ class PostController extends Controller
             ->fields([
                 Textarea::make('content')->label('Write Your Post')->rules('required')->autosize(),
                 Submit::make()->label('Post'),
-                ])
+                File::make('image')
+                    ->filepond()
+                    ->preview(),
+            ])
             ->method('post')
-            ->action( route('dashboard.store'))
-            ->stay( actionOnSuccess: 'reset');
-        
-            $posts = Post::orderBy('created_at', 'desc')->get();
-        
+            ->action(route('dashboard.store'))
+            ->stay(actionOnSuccess: 'reset');
+
+        $posts = Post::orderBy('created_at', 'desc')->get();
+
         return view('dashboard', [
             'form' => $form,
             'posts' => $posts,
@@ -51,25 +56,29 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
+        $image = $request->file('image');
+        $imagePath = Storage::disk('minio')->put('photos/photo.jpg', $image);
+
+        dd($imagePath, $request, $image);
+
         $request->validate([
             'content' => 'required',
         ]);
-        
+
         $post = new Post();
         $post->content = $request->input('content');
         $post->user_id = Auth()->user()->id;
         $post->save();
 
         $usersToNotify = User::where('id', '!=', auth()->id())->get();
-        foreach ($usersToNotify as $user)
-        {
+        foreach ($usersToNotify as $user) {
             $user->notify(new NewPostNotification($post));
         }
 
         Toast::title('Success!')
-        ->message('Your post has been successfully stored!')
-        ->success()
-        ->autoDismiss(5);
+            ->message('Your post has been successfully stored!')
+            ->success()
+            ->autoDismiss(5);
     }
 
     /**
@@ -80,8 +89,8 @@ class PostController extends Controller
         $post = Post::findOrFail($id);
 
         $notification = Auth()->user()->notifications()
-        ->where('data->post_id', $id)
-        ->first();
+            ->where('data->post_id', $id)
+            ->first();
 
         $notification->markAsRead();
 
