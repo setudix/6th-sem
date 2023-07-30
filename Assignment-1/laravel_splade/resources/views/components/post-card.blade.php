@@ -2,6 +2,16 @@
     <div class="bg-white rounded-b lg:rounded-b-none lg:rounded-r p-4 flex flex-col justify-between leading-normal">
         <div class="mb-8">
             <p class="text-gray-700 text-base"> {{ $content }} </p>
+            <div class="flex">
+
+                @if (count($photos) > 0)
+                    @foreach ($photos as $photo)
+                        <img class="w-1/4 h-1/4 p-2"
+                            src="{{ env('MINIO_ENDPOINT') . '/' . env('MINIO_BUCKET') . '/' . $photo->path }}"
+                            alt="photo">
+                    @endforeach
+                @endif
+            </div>
         </div>
         <div class="flex items-center">
             <div class="text-sm">

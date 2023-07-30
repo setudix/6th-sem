@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Photo;
 use App\Models\Post;
 use App\Models\User;
 use App\Notifications\NewPostNotification;
@@ -26,7 +27,7 @@ class PostController extends Controller
             ->class('space-y-4')
             ->fields([
                 Textarea::make('content')->label('Write Your Post')->rules('required')->autosize(),
-                File::make('images')
+                File::make('images[]')
                     ->filepond()
                     ->multiple()
                     ->preview(),
@@ -71,8 +72,22 @@ class PostController extends Controller
         $post->user_id = Auth()->user()->id;
         $post->save();
 
+        $pictures = $request->file('images');
+
+        foreach ($pictures as $picture)
+        {
+            $path = Storage::disk('minio')->put('photos', $picture);
+
+            $photo = new Photo();
+            $photo->post_id = $post->id;
+            $photo->path = $path;
+            $photo->save();
+
+        }
+
         $usersToNotify = User::where('id', '!=', auth()->id())->get();
-        foreach ($usersToNotify as $user) {
+        foreach ($usersToNotify as $user) 
+        {
             $user->notify(new NewPostNotification($post));
         }
 
